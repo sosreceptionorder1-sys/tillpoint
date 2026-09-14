@@ -14,13 +14,6 @@ import { Droplets, Leaf, ShieldCheck, Sun, ArrowRight } from "lucide-react";
 import { setMode } from "@/lib/session-mode";
 import { useShowInstallButton } from "@/hooks/use-app-prefs";
 import { cashierSignIn } from "@/lib/cashier-auth.functions";
-import rosehip from "@/assets/Rosehip-125ml-Box-Mock-up.png.asset.json";
-import q10 from "@/assets/q10-125ml-Box-Mock-up.png.asset.json";
-import tissueOil from "@/assets/Tissue-Oil-125ml-Box-Mock-up.png.asset.json";
-import camphor from "@/assets/exo-camphor.png.asset.json";
-import creamMen from "@/assets/exo-cream-men.png.asset.json";
-import glycerine from "@/assets/exo-glycerine.png.asset.json";
-import tissueCream from "@/assets/exo-tissue-cream.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -48,46 +41,62 @@ const creamHeroImage =
 const productImages = {
   oilColors: "https://i.postimg.cc/HLC8SD6Y/Chat-GPT-Image-Sep-14-2026-09-00-32-AM.png",
   creamColors: "https://i.postimg.cc/m2fcZGGt/Chat-GPT-Image-Sep-14-2026-08-48-36-AM.png",
-  scar: rosehip.url,
-  firming: q10.url,
-  tissue: tissueOil.url,
+  tissueOil: "https://i.postimg.cc/yNGfkTBH/Whats-App-Image-2026-09-07-at-9-24-42-AM.jpg",
+  firmingOil: "https://i.postimg.cc/mgRKsV2b/Whats-App-Image-2026-09-07-at-9-24-43-AM.jpg",
+  scarOil: "https://i.postimg.cc/BvpY4G7J/Whats-App-Image-2026-09-07-at-9-24-43-AM-(1).jpg",
+  tripleGlycerine: "https://i.postimg.cc/vZbRwnWf/a.png",
+  tissueOilCream: "https://i.postimg.cc/HkQNSkRh/e.png",
+  camphorCream: "https://i.postimg.cc/rwrTqTbx/f.png",
+  q10Cream: "https://i.postimg.cc/YCGrjYvT/d.png",
+  maxMoisture: "https://i.postimg.cc/FzpRgvvM/c.png",
+  menTissueOilCream: "https://i.postimg.cc/Kv5LJXQY/50ml-Exo-Tissue-oil-Men-768x802.png",
 };
 
 const products = [
   {
-    img: tissueCream.url,
-    name: "Tissue Oil Cream",
-    body: "Triple glycerine with tissue oil and essential oils. Dermatologist tested for 72 hour moisturisation.",
+    img: productImages.tissueOilCream,
+    name: "EXO Moisture Intensive Tissue Oil Cream",
+    body: "Unveil a radiant you with EXO’s luxurious Tissue Oil Cream. This innovative formula combines the nourishing power of tissue oils with rich, hydrating ingredients to quench your skin’s thirst. Perfect for all skin types, it leaves skin soft, supple and smooth.",
   },
   {
-    img: glycerine.url,
-    name: "Triple Glycerine Cream",
-    body: "Three times the glycerine, non-greasy, dermatologically tested for 48 hour moisturisation.",
+    img: productImages.tripleGlycerine,
+    name: "EXO Moisture Intensive Triple Glycerine Cream",
+    body: "Say goodbye to dryness with a powerful triple dose of glycerin, a natural humectant that attracts and retains moisture. It deeply hydrates rough, flaky skin for a soft, smooth and radiant glow.",
   },
   {
-    img: camphor.url,
-    name: "Triple Intensive Camphor",
-    body: "Camphor cream with triple glycerine and essential oils to restore, rejuvenate and repair.",
+    img: productImages.camphorCream,
+    name: "EXO Triple Intensive Camphor Cream",
+    body: "EXO’s Triple Camphor Formula delivers a powerful 3X cooling sensation to soothe irritation and refresh tired skin. Ideal for aches, muscle tension and post-workout soreness.",
   },
   {
-    img: creamMen.url,
-    name: "Tissue Oil Cream 450ml - Men",
-    body: "A richer tin for men. Tissue oil and essential oils with 72 hour moisturisation.",
+    img: productImages.q10Cream,
+    name: "EXO Q10 Firming Triple Glycerine Cream",
+    body: "Triple hydration and rejuvenation combine with Coenzyme Q10 in this luxurious cream, giving your skin essential care and a refreshed, revitalized feel.",
   },
   {
-    img: productImages.tissue,
-    name: "Tissue Oil 125ml",
-    body: "A high potency, non-greasy oil concentrate for scars, stretch marks, dehydrated and ageing skin.",
+    img: productImages.maxMoisture,
+    name: "EXO Max Moisture Triple Glycerine Cream",
+    body: "A rich moisturizer designed for men’s skin. It helps combat environmental stressors while delivering essential nutrients and a luxurious triple-glycerine experience.",
   },
   {
-    img: productImages.scar,
-    name: "Scar & Stretch Mark Oil",
-    body: "Rosehip and jojoba tissue oil that softens the look of scars, stretch marks and dry skin.",
+    img: productImages.menTissueOilCream,
+    name: "Tissue Oil Cream 450ml (Men)",
+    body: "Blended with tissue oil and essential oils, dermatologist tested for 72-hour moisturization and enriched with triple glycerine and nourishing oils for deeply hydrated, healthy-looking skin.",
   },
   {
-    img: productImages.firming,
-    name: "Skin Firming & Toning Oil",
-    body: "Q10 tissue oil for fine lines, uneven tone, elasticity and everyday vitality.",
+    img: productImages.tissueOil,
+    name: "EXO Tissue Oil (125ml)",
+    body: "A high-potency, non-greasy oil concentrate specially blended to reduce the appearance of scars, stretch marks and dehydrated or aging skin. Easily absorbed for deep penetration and visible results.",
+  },
+  {
+    img: productImages.firmingOil,
+    name: "Skin Firming & Toning Oil (125ml)",
+    body: "Infused with Coenzyme Q10 and antioxidant-rich, age-defying properties, this non-greasy formula targets fine lines, stretch marks and uneven tone while supporting skin elasticity and vitality.",
+  },
+  {
+    img: productImages.scarOil,
+    name: "Scar & Stretch Mark Oil (125ml)",
+    body: "Rosehip and jojoba combine in this lightweight, fast-absorbing oil to improve the appearance of scars, stretch marks and dry or aging skin while delivering deep nourishment and antioxidant protection.",
   },
 ];
 
@@ -264,11 +273,6 @@ function Landing() {
                 aria-hidden="true"
               />
               <img
-                src="/exo-logo.png"
-                alt="EXO logo"
-                className="relative mx-auto w-full max-w-[34rem] object-contain drop-shadow-2xl"
-              />
-              <img
                 src={creamHeroImage}
                 alt="EXO moisture intensive creams and oils"
                 onError={(event) => {
@@ -406,6 +410,9 @@ function Landing() {
                     src={p.img}
                     alt={p.name}
                     loading="lazy"
+                    onError={(event) => {
+                      event.currentTarget.src = "/packs.png";
+                    }}
                     className="h-full w-full object-contain transition group-hover:scale-[1.03]"
                   />
                 </div>
