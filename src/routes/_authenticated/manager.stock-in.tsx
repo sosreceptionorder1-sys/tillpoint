@@ -73,6 +73,7 @@ function StockInRecordsPage() {
   const [to, setTo] = useState("");
 
   useEffect(() => {
+    setShowForm(new URLSearchParams(window.location.search).get("record") === "1");
     const channel = supabase
       .channel("stock-in-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "stock_in_records" }, () => {

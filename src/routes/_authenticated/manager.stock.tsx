@@ -49,7 +49,6 @@ function StockPage() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "low" | "out" | "ok">("all");
-  const [addStockFor, setAddStockFor] = useState<StockRow | null>(null);
   const [editPriceFor, setEditPriceFor] = useState<StockRow | null>(null);
 
   const stockInHistory = useQuery({
@@ -91,43 +90,6 @@ function StockPage() {
       toast.success("Stock updated");
       qc.invalidateQueries({ queryKey: ["stock"] });
       qc.invalidateQueries({ queryKey: ["products"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const addStock = useMutation({
-    mutationFn: async ({
-      id,
-      current,
-      add,
-      buyingPrice,
-    }: {
-      id: string;
-      current: number;
-      add: number;
-      buyingPrice: number;
-    }) => {
-      const { error } = await supabase
-        .from("stock")
-        .update({ quantity: current + add })
-        .eq("id", id);
-      if (error) throw error;
-      await supabase.from("audit_logs").insert({
-        action: "stock_in",
-        details: {
-          stock_id: id,
-          quantity: add,
-          buying_price: buyingPrice,
-          product_name: "Stock received",
-          reason: "Manual stock-in",
-        },
-      });
-    },
-    onSuccess: () => {
-      toast.success("Stock added");
-      qc.invalidateQueries({ queryKey: ["stock"] });
-      setAddStockFor(null);
-      qc.invalidateQueries({ queryKey: ["stock-in-history"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -337,7 +299,9 @@ function StockPage() {
                     key={r.id}
                     row={r}
                     onSave={(l) => updateStock.mutate({ id: r.id, low: l })}
-                    onAdd={() => setAddStockFor(r)}
+                    onAdd={() => {
+                      window.location.href = "/manager/stock-in?record=1";
+                    }}
                     onEditPrice={() => setEditPriceFor(r)}
                     onMarkAvailable={() => r.variant && markAvailable.mutate(r.variant.id)}
                     pending={updateStock.isPending}
@@ -349,57 +313,6 @@ function StockPage() {
           </Table>
         </div>
       </Card>
-
-      <Dialog open={!!addStockFor} onOpenChange={(o) => !o && setAddStockFor(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add stock - {addStockFor?.variant?.product?.name}</DialogTitle>
-          </DialogHeader>
-          {addStockFor && (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const fd = new FormData(e.currentTarget);
-                const add = parseInt(String(fd.get("add") ?? "0"), 10) || 0;
-                const buyingPrice = parseFloat(String(fd.get("buyingPrice") ?? "0")) || 0;
-                if (add > 0)
-                  addStock.mutate({
-                    id: addStockFor.id,
-                    current: addStockFor.quantity,
-                    add,
-                    buyingPrice,
-                  });
-              }}
-              className="space-y-4"
-            >
-              <div className="text-sm text-muted-foreground">
-                Current: <span className="font-medium text-foreground">{addStockFor.quantity}</span>{" "}
-                units
-              </div>
-              <div className="space-y-2">
-                <Label>Units brought in</Label>
-                <Input name="add" type="number" min="1" required autoFocus placeholder="e.g. 10" />
-              </div>
-              <div className="space-y-2">
-                <Label>Total buying price</Label>
-                <Input
-                  name="buyingPrice"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  required
-                  placeholder="e.g. 45.00"
-                />
-              </div>
-              <DialogFooter>
-                <Button type="submit" disabled={addStock.isPending}>
-                  Add to stock
-                </Button>
-              </DialogFooter>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={!!editPriceFor} onOpenChange={(o) => !o && setEditPriceFor(null)}>
         <DialogContent>
