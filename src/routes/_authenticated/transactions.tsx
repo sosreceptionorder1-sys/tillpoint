@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BrandLogo } from "@/components/brand-logo";
 import { SyncIndicator } from "@/components/sync-indicator";
+import { useAuth } from "@/hooks/use-auth";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { ArrowLeft, Copy, Download, Trash2, Search, Printer } from "lucide-react";
 import { printReceipt, downloadReceipt } from "@/lib/receipt";
@@ -47,17 +48,18 @@ function TransactionsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [isManager, setIsManager] = useState(false);
+  const { role } = useAuth();
+  const [isManager, setIsManager] = useState(() => role === "manager" || isManagerMode());
 
   useEffect(() => {
-    // Manager tools appear only when this device is actually in manager mode.
-    const manager = isManagerMode();
+    // Prefer the authenticated role so manager navigation survives mode changes.
+    const manager = role === "manager" || isManagerMode();
     setIsManager(manager);
     if (manager) setMode("manager");
     const off = subscribeLog(setEntries);
     void hydrateLogFromIdb();
     return off;
-  }, []);
+  }, [role]);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();

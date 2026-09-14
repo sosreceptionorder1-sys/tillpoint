@@ -80,10 +80,10 @@ function StockPage() {
   });
 
   const updateStock = useMutation({
-    mutationFn: async ({ id, quantity, low }: { id: string; quantity: number; low: number }) => {
+    mutationFn: async ({ id, low }: { id: string; low: number }) => {
       const { error } = await supabase
         .from("stock")
-        .update({ quantity, low_stock_alert_level: low })
+        .update({ low_stock_alert_level: low })
         .eq("id", id);
       if (error) throw error;
     },
@@ -336,7 +336,7 @@ function StockPage() {
                   <StockEditor
                     key={r.id}
                     row={r}
-                    onSave={(q, l) => updateStock.mutate({ id: r.id, quantity: q, low: l })}
+                    onSave={(l) => updateStock.mutate({ id: r.id, low: l })}
                     onAdd={() => setAddStockFor(r)}
                     onEditPrice={() => setEditPriceFor(r)}
                     onMarkAvailable={() => r.variant && markAvailable.mutate(r.variant.id)}
@@ -479,19 +479,24 @@ function StockEditor({
   markPending,
 }: {
   row: StockRow;
-  onSave: (q: number, l: number) => void;
+  onSave: (l: number) => void;
   onAdd: () => void;
   onEditPrice: () => void;
   onMarkAvailable: () => void;
   pending: boolean;
   markPending: boolean;
 }) {
-  const [q, setQ] = useState(row.quantity);
   const [l, setL] = useState(row.low_stock_alert_level);
-  const dirty = q !== row.quantity || l !== row.low_stock_alert_level;
+  const dirty = l !== row.low_stock_alert_level;
   const flaggedOut = row.available === false;
-  const status = flaggedOut ? "flagged" : q === 0 ? "out" : q <= l ? "low" : "ok";
-  const value = q * Number(row.variant?.price ?? 0);
+  const status = flaggedOut
+    ? "flagged"
+    : row.quantity === 0
+      ? "out"
+      : row.quantity <= l
+        ? "low"
+        : "ok";
+  const value = row.quantity * Number(row.variant?.price ?? 0);
   return (
     <TableRow className={flaggedOut ? "bg-red-50/50" : undefined}>
       <TableCell className="font-medium">{row.variant?.product?.name}</TableCell>
@@ -508,13 +513,9 @@ function StockEditor({
         </button>
       </TableCell>
       <TableCell>
-        <Input
-          type="number"
-          min={0}
-          value={q}
-          onChange={(e) => setQ(Number(e.target.value) || 0)}
-          className="w-20"
-        />
+        <span className="inline-flex min-w-20 items-center rounded-md border bg-muted/40 px-3 py-2 text-sm font-semibold tabular-nums">
+          {row.quantity}
+        </span>
       </TableCell>
       <TableCell>
         <Input
@@ -540,9 +541,9 @@ function StockEditor({
       <TableCell>
         <div className="flex flex-wrap gap-1">
           <Button size="sm" variant="outline" onClick={onAdd}>
-            <Plus className="h-3.5 w-3.5" />
+            Stock-In
           </Button>
-          <Button size="sm" disabled={!dirty || pending} onClick={() => onSave(q, l)}>
+          <Button size="sm" disabled={!dirty || pending} onClick={() => onSave(l)}>
             Save
           </Button>
           <Button

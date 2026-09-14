@@ -73,6 +73,9 @@ function ManagerSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [showInstall, setShowInstall] = useShowInstallButton();
   const [confirmReset, setConfirmReset] = useState(false);
+  const [salesExported, setSalesExported] = useState(
+    () => sessionStorage.getItem("tillpoint.sales-exported-before-reset") === "1",
+  );
   const [confirmSalesReset, setConfirmSalesReset] = useState(false);
   const [salesToday, setSalesToday] = useState({ total: 0, count: 0 });
   const [resetting, setResetting] = useState(false);
@@ -117,7 +120,9 @@ function ManagerSettingsPage() {
       ["sales", "sales-by-day", "stock", "products", "cashier", "manager", "daily-cash"].forEach(
         (key) => qc.invalidateQueries({ queryKey: [key] }),
       );
-      toast.success("Transactions cleared and every product returned to its registered peak quantity.");
+      toast.success(
+        "Transactions cleared and every product returned to its registered peak quantity.",
+      );
       setConfirmReset(false);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Transaction reset failed.");
@@ -142,7 +147,6 @@ function ManagerSettingsPage() {
         : { ...current, managerName: profile.full_name },
     );
   }, [profile?.full_name]);
-
 
   function update<K extends keyof SettingsForm>(key: K, value: SettingsForm[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -170,7 +174,6 @@ function ManagerSettingsPage() {
         qc.invalidateQueries();
       }
       toast.success("Settings saved.");
-
     } catch {
       toast.error("Could not save settings.");
     } finally {
@@ -198,16 +201,25 @@ function ManagerSettingsPage() {
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
           Clears the Sales and Transaction Log pages back to zero and returns every product variant
-          to its own highest registered peak quantity. Products, suppliers, expenses and
-          cash records are never deleted. Export your sales first if you need a copy.
+          to its own highest registered peak quantity. Products, suppliers, expenses and cash
+          records are never deleted. Export your sales first if you need a copy.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <Button variant="outline" asChild>
-            <a href="/manager/sales">
-              <Download className="mr-2 h-4 w-4" /> Export sales first
-            </a>
+          <Button
+            variant="outline"
+            onClick={() => {
+              sessionStorage.setItem("tillpoint.sales-exported-before-reset", "1");
+              setSalesExported(true);
+              window.location.href = "/manager/sales";
+            }}
+          >
+            <Download className="mr-2 h-4 w-4" /> Export sales first
           </Button>
-          <Button variant="destructive" onClick={() => setConfirmReset(true)} disabled={resetting}>
+          <Button
+            variant="destructive"
+            onClick={() => setConfirmReset(true)}
+            disabled={resetting || !salesExported}
+          >
             <RotateCcw className="mr-2 h-4 w-4" />
             {resetting ? "Resetting..." : "Transaction Reset"}
           </Button>
@@ -243,8 +255,8 @@ function ManagerSettingsPage() {
           <Timer className="h-4 w-4 text-primary" /> Sales today reset
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
-          Sets the cashier&apos;s &quot;Sales today&quot; total back to zero for a fresh shift. Sales
-          records, stock and reports are untouched - only the till counter restarts.
+          Sets the cashier&apos;s &quot;Sales today&quot; total back to zero for a fresh shift.
+          Sales records, stock and reports are untouched - only the till counter restarts.
         </p>
         <div className="mt-3 text-sm">
           Current counter:{" "}
