@@ -504,7 +504,7 @@ function SuppliersPage() {
                     />
                     <Input
                       type="number"
-                      placeholder="Qty"
+                      placeholder="# of Units"
                       value={it.quantity}
                       onChange={(e) => {
                         const items = [...poForm.items];
@@ -515,7 +515,7 @@ function SuppliersPage() {
                     <Input
                       type="number"
                       step="0.01"
-                      placeholder="Unit cost"
+                      placeholder="Price"
                       value={it.unit_cost}
                       onChange={(e) => {
                         const items = [...poForm.items];

@@ -257,8 +257,8 @@ function StockInRecordsPage() {
                             <CommandItem
                               key={v.id}
                               value={`${v.product?.name ?? ""} ${v.variant_name} ${v.product?.category ?? ""}`}
-                              onSelect={() => {
-                                setForm({ ...form, variantId: v.id });
+                              onClick={() => {
+                                setForm((current) => ({ ...current, variantId: v.id }));
                                 setVariantOpen(false);
                               }}
                             >
