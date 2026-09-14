@@ -15,7 +15,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { SignOutButton } from "@/components/sign-out-button";
 import { ManagerGateLogo } from "@/components/manager-gate-logo";
 import { toast } from "sonner";
@@ -29,6 +36,7 @@ import {
   Package as PackageIcon,
   BookOpen,
   ClipboardList,
+  Receipt,
   RefreshCw,
   CheckCircle2,
   AlertTriangle,
@@ -38,12 +46,7 @@ import {
   Menu,
 } from "lucide-react";
 import { enqueueSale, flushQueue, getQueue } from "@/lib/offline-queue";
-import {
-  appendLog,
-  hydrateLogFromIdb,
-  subscribeLog,
-  type TxLogEntry,
-} from "@/lib/transaction-log";
+import { appendLog, hydrateLogFromIdb, subscribeLog, type TxLogEntry } from "@/lib/transaction-log";
 import { computeSalesToday, subscribeSalesTodayMarker } from "@/lib/sales-today";
 import { SyncAlertBanner } from "@/components/sync-alert-banner";
 import { printReceipt, downloadReceipt, receiptText, receiptNumber } from "@/lib/receipt";
@@ -88,6 +91,12 @@ function CashierScreen() {
   const [payment, setPayment] = useState<"cash" | "mobile" | "other">("cash");
   const [checkingOut, setCheckingOut] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
+  const [expenseOpen, setExpenseOpen] = useState(false);
+  const [expenseForm, setExpenseForm] = useState({
+    category: "Other",
+    amount: "",
+    description: "",
+  });
   const [queuedCount, setQueuedCount] = useState<number>(() => getQueue().length);
   // Today's takings, read from the local transaction log so the figure is
   // correct even with no connection.
@@ -190,6 +199,28 @@ function CashierScreen() {
   }, [variants.data, idbCatalog]);
 
   const list: Variant[] = variants.data ?? offlineList;
+
+  const recordExpense = useMutation({
+    mutationFn: async () => {
+      const amount = Number(expenseForm.amount);
+      if (!Number.isFinite(amount) || amount <= 0) throw new Error("Enter a valid expense amount");
+      const { error } = await supabase.from("expenses").insert({
+        expense_date: new Date().toISOString().slice(0, 10),
+        category: expenseForm.category,
+        amount,
+        description: expenseForm.description.trim() || null,
+        recorded_by: session?.user.id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Expense recorded");
+      setExpenseForm({ category: "Other", amount: "", description: "" });
+      setExpenseOpen(false);
+      qc.invalidateQueries({ queryKey: ["expenses"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
 
   const settings = useQuery({
     queryKey: ["cashier", "settings"],
@@ -493,7 +524,9 @@ function CashierScreen() {
                 {today.count} sale{today.count === 1 ? "" : "s"}
               </div>
             </div>
-            <div className="hidden sm:block"><SyncIndicator /></div>
+            <div className="hidden sm:block">
+              <SyncIndicator />
+            </div>
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="outline" size="sm" aria-label="Open cashier actions">
@@ -506,13 +539,42 @@ function CashierScreen() {
                   <SheetDescription>Operational tools and account controls.</SheetDescription>
                 </SheetHeader>
                 <div className="flex flex-col gap-3 p-4">
-                  <Button variant="outline" onClick={() => syncOfflineQueue(true)} disabled={!online || syncStatus === "syncing"}><RefreshCw data-icon="inline-start" /> Sync</Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => syncOfflineQueue(true)}
+                    disabled={!online || syncStatus === "syncing"}
+                  >
+                    <RefreshCw data-icon="inline-start" /> Sync
+                  </Button>
                   <PWAInstallButton variant="outline" size="sm" label="Install" />
-                  <Link to="/transactions"><Button variant="outline" className="w-full"><ClipboardList data-icon="inline-start" /> Transaction log</Button></Link>
-                  <Link to="/sync"><Button variant="outline" className="w-full">Sync queue</Button></Link>
-                  <Link to="/shift"><Button variant="outline" className="w-full"><LockIcon data-icon="inline-start" /> Shift close</Button></Link>
-                  <Link to="/refunds"><Button variant="outline" className="w-full"><Undo2 data-icon="inline-start" /> Refunds</Button></Link>
-                  {showManual && <Button variant="outline" onClick={() => setManualOpen(true)}><BookOpen data-icon="inline-start" /> Manual</Button>}
+                  <Button variant="outline" className="w-full" onClick={() => setExpenseOpen(true)}>
+                    <Receipt data-icon="inline-start" /> Expense entry
+                  </Button>
+                  <Link to="/transactions">
+                    <Button variant="outline" className="w-full">
+                      <ClipboardList data-icon="inline-start" /> Transaction log
+                    </Button>
+                  </Link>
+                  <Link to="/sync">
+                    <Button variant="outline" className="w-full">
+                      Sync queue
+                    </Button>
+                  </Link>
+                  <Link to="/shift">
+                    <Button variant="outline" className="w-full">
+                      <LockIcon data-icon="inline-start" /> Shift close
+                    </Button>
+                  </Link>
+                  <Link to="/refunds">
+                    <Button variant="outline" className="w-full">
+                      <Undo2 data-icon="inline-start" /> Refunds
+                    </Button>
+                  </Link>
+                  {showManual && (
+                    <Button variant="outline" onClick={() => setManualOpen(true)}>
+                      <BookOpen data-icon="inline-start" /> Manual
+                    </Button>
+                  )}
                   <SignOutButton variant="outline" />
                 </div>
               </SheetContent>
@@ -770,6 +832,78 @@ function CashierScreen() {
           </p>
         </div>
       </aside>
+
+      <Dialog open={expenseOpen} onOpenChange={setExpenseOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Expense entry</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <label htmlFor="cashier-expense-category" className="text-sm font-medium">
+                Category
+              </label>
+              <Select
+                value={expenseForm.category}
+                onValueChange={(category) =>
+                  setExpenseForm((current) => ({ ...current, category }))
+                }
+              >
+                <SelectTrigger id="cashier-expense-category">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[
+                    "Rent",
+                    "Utilities",
+                    "Wages",
+                    "Restock",
+                    "Transport",
+                    "Repairs",
+                    "Marketing",
+                    "Other",
+                  ].map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="cashier-expense-amount" className="text-sm font-medium">
+                Amount
+              </label>
+              <Input
+                id="cashier-expense-amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={expenseForm.amount}
+                onChange={(event) =>
+                  setExpenseForm((current) => ({ ...current, amount: event.target.value }))
+                }
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="cashier-expense-description" className="text-sm font-medium">
+                Description
+              </label>
+              <Input
+                id="cashier-expense-description"
+                value={expenseForm.description}
+                onChange={(event) =>
+                  setExpenseForm((current) => ({ ...current, description: event.target.value }))
+                }
+                placeholder="What was this expense for?"
+              />
+            </div>
+            <Button onClick={() => recordExpense.mutate()} disabled={recordExpense.isPending}>
+              {recordExpense.isPending ? "Saving..." : "Record expense"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={manualOpen} onOpenChange={setManualOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-auto">
